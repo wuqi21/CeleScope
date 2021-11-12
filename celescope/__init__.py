@@ -16,7 +16,8 @@ ASSAY_DICT = {
     'tag': 'Single-cell tag',
     'citeseq': 'Single Cell CITE-Seq',
     'tcr_fl': 'Single Cell full length TCR',
-    'dynaseq': 'Single-cell dynaseq'
+    'dynaseq': 'Single-cell dynaseq',
+    'snp_fusion':'Single-cell variant and fusion Gene'
 }
 
 ROOT_PATH = os.path.dirname(__file__)
