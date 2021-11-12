@@ -54,6 +54,8 @@ class Analysis_variant(Step, AnalysisMixin):
     @utils.add_log
     def ncell_metrics(self):
         variant_count_df = pd.read_table(self.filter_variant_count_file, sep='\t')
+        variant_count_df = variant_count_df.loc[(variant_count_df["ref_count"]!=0) | 
+            (variant_count_df["alt_count"]!=0)]
         if 'RID' in variant_count_df.columns: 
             df_cover = variant_count_df.groupby('VID').agg({'RID':'first','CID':'count'})
         else:
@@ -77,6 +79,11 @@ class Analysis_variant(Step, AnalysisMixin):
         for df in df_list:
             df_ncell = pd.merge(df_ncell, df, on='VID', how='left')
         df_ncell.fillna(0, inplace=True)
+
+        # dtype after fillna is float
+        float_cols = ['ncell_ref', 'ncell_alt', 'ncell_ref_and_alt']
+        for col in float_cols:
+            df_ncell[col] = df_ncell[col].astype('int')
 
         df_ncell.to_csv(self.ncell_file, sep = '\t',index = True)
 
@@ -144,12 +151,14 @@ class Analysis_variant(Step, AnalysisMixin):
         df_vcf = pd.merge(left = df_vcf,
                           right = ncell_df,
                           on = "VID",
-                          how = "left").drop(["ncell_ref","ncell_ref_and_alt"],axis = 1)
+                          how = "left")
 
         out_df_vcf = f'{self.outdir}/{self.sample}_variant_table.tsv'
         df_vcf.drop("nCell",axis = 1).to_csv(out_df_vcf, sep='\t', index=False)
 
-        cols = ['VID', "CID",'Chrom', 'Pos', 'Alleles', 'Gene',  'ncell_cover', 'ncell_alt','mRNA', 'Protein', 'COSMIC']
+        cols = ['VID', "CID",'Chrom', 'Pos', 'Alleles', 'Gene',  
+            'ncell_cover', "ncell_ref", 'ncell_alt', "ncell_ref_and_alt",
+            'mRNA', 'Protein', 'COSMIC']
         df_vcf = df_vcf[cols]
         return df_vcf
     

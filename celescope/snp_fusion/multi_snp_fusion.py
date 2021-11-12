@@ -36,8 +36,7 @@ class Multi_snp_fusion(Multi):
     ```
     multi_snp_fusion\\
         --mapfile ./test1.mapfile\\
-        --snp_genomeDir {genomeDir after running celescope snp mkref}\\
-        --fusion_genomeDir {genomeDir after running celescope fusion mkref}\\
+        --snp_genomeDir {snp_genomeDir after running celescope snp mkref}\\
         --thread 10\\
         --mod shell\\
         --gene_list gene_list.tsv\\
@@ -51,7 +50,6 @@ class Multi_snp_fusion(Multi):
     multi_snp_fusion\\
         --mapfile ./test1.mapfile\\
         --snp_genomeDir {genomeDir after running celescope snp mkref}\\
-        --fusion_genomeDir {genomeDir after running celescope fusion mkref}\\
         --thread 10\\
         --mod shell\\
         --gene_list gene_list.tsv\\

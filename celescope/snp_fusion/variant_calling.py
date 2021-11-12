@@ -72,7 +72,6 @@ def call_snp(outdir, fasta, CID):
         f'bcftools mpileup -Ou '
         f'-f {fasta} '
         f'{sorted_bam} -o {bcf} '
-        f'-a AD'
     )
     subprocess.check_call(cmd_mpileup, shell=True)
 
