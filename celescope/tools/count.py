@@ -166,6 +166,8 @@ class Count(Step):
             for umi_kv in umi_arr:
                 high_seq = umi_kv[0]
                 high_count = umi_kv[1]
+                if len(high_seq) != len(low_seq):
+                    continue
                 if float(low_count / high_count) > percent:
                     break
                 if utils.hamming_distance(low_seq, high_seq) == 1:
