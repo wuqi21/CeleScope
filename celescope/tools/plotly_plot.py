@@ -170,22 +170,14 @@ class Pie_plot(Plotly_plot):
 
 class Line_plot(Plotly_plot):
 
-    def __init__(self, df_line,feature_name,range=[0,100],section=True):
+    def __init__(self, df_line,title=None,x_title=None,y_title=None,range=[0,100],section=True,):
         super().__init__(df_line)
         self.df_line = df_line
-        self.feature_name = feature_name
+        self.title = title
+        self.x_title = x_title
+        self.y_title = y_title
         self.range = range
         self.section = section
-        self.index = None
-        #随title信息变更index
-        if self.feature_name == "Saturation":
-            self.index = 0
-        elif self.feature_name == "Median gene_Num":
-            self.index = 1
-        #更新填入title信息
-        self.title = ['Sequencing Saturation','Median Genes per Cell']
-        self._str_coord1 = "Reads Fraction"
-        self._str_coord2 = ["Sequencing Saturation(%)","Median Genes per Cell"]
 
         self.xaxes_config = {
             'showgrid': True,
@@ -219,9 +211,9 @@ class Line_plot(Plotly_plot):
 
         self.line_config = {
             'data_frame': df_line,
-            'title': self.title[self.index],
-            'x': self._str_coord1, 
-            'y': self._str_coord2[self.index],
+            'title': self.title,
+            'x': self.x_title, 
+            'y': self.y_title,
         }
 
         self.line_plot()
