@@ -1,3 +1,5 @@
+import glob
+
 import scanpy as sc
 import numpy as np
 import pandas as pd
@@ -6,6 +8,7 @@ from celescope.tools import utils
 from celescope.__init__ import HELP_DICT
 from celescope.rna.mkref import Mkref_rna
 from celescope.tools.step import Step, s_common
+from celescope.tools.__init__ import __PATTERN_DICT__, FILTERED_MATRIX_DIR_SUFFIX, BARCODE_FILE_NAME 
 
 
 MITO_VAR = 'mito'
@@ -328,6 +331,84 @@ class Scanpy_wrapper(Step):
         df_marker = pd.read_csv(self.df_marker_file, sep="\t")
         df_marker = format_df_marker(df_marker)
         return df_tsne, df_marker
+
+
+@utils.add_log
+def get_barcode_from_match_dir(match_dir):
+    '''
+    multi version compatible
+    Returns:
+        match_barcode: list
+        no_match_barcode: int
+    '''
+    barcode_file_pattern_list = []
+    for matrix_dir_suffix in FILTERED_MATRIX_DIR_SUFFIX:
+        for barcode_file_name in BARCODE_FILE_NAME:
+            barcode_file_pattern_list.append(f"{match_dir}/*count/*{matrix_dir_suffix}/{barcode_file_name}")
+
+    match_list = []
+    for barcode_file_pattern in barcode_file_pattern_list:
+        match_pattern = glob.glob(barcode_file_pattern)
+        if match_pattern:
+            match_list.append(match_pattern[0])
+
+    if len(match_list) == 0:
+        raise FileNotFoundError(
+            f"No barcode file found in {match_dir}\n"
+            f"Allowed barcode file pattern: {barcode_file_pattern_list}"
+        )
+
+    if len(match_list) > 1:
+        print("ERROR: Multiple Barcode file found!")
+        print(f"Barcode file found: {match_list}")
+        sys.exit(1)
+
+    match_barcode_file = match_list[0]
+    get_barcode_from_match_dir.logger.info(f"Barcode file:{match_barcode_file}")
+    match_barcode, n_match_barcode = read_one_col(match_barcode_file)
+    return match_barcode, n_match_barcode
+
+
+def get_barcode_from_matrix_dir(matrix_dir):
+    """
+
+    """
+    match_barcode_file = f'{matrix_dir}/{BARCODE_FILE_NAME[0]}'
+    match_barcode, n_match_barcode = read_one_col(match_barcode_file)
+    return match_barcode, n_match_barcode
+
+
+@utils.add_log
+def parse_match_dir(match_dir):
+    '''
+    return dict
+    keys: 'match_barcode', 'n_match_barcode', 'matrix_dir', 'tsne_coord'
+    '''
+    match_dict = {}
+
+    pattern_dict = {
+        'matrix_dir': f'{match_dir}/*count*/*matrix_10X',
+        'tsne_coord': f'{match_dir}/*analysis*/*tsne_coord.tsv',
+        'markers': f'{match_dir}/*analysis*/*markers.tsv',
+
+    }
+
+    for file_name in pattern_dict:
+        match_file = glob.glob(pattern_dict[file_name])
+        if not match_file:
+            parse_match_dir.logger.warning(f"No {file_name} found in {match_dir}")
+        else:
+            match_dict[file_name] = match_file[0]
+
+    try:
+        match_barcode, n_match_barcode = get_barcode_from_match_dir(match_dir)
+    except FileNotFoundError as e:
+        parse_match_dir.logger.warning(e)
+    else:
+        match_dict['match_barcode'] = match_barcode
+        match_dict['n_match_barcode'] = n_match_barcode
+
+    return match_dict
 
 
 def get_opts_analysis_match(parser, sub_program):

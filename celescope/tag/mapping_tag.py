@@ -1,6 +1,7 @@
 """
 map read2 to barcode_fasta
 """
+import json
 
 import pandas as pd
 import pysam
@@ -9,6 +10,7 @@ from celescope.tools import utils
 import celescope.tools.barcode as Barcode
 from celescope.tools.barcode import parse_pattern
 from celescope.tools.step import Step, s_common
+from celescope.tools import analysis_wrapper
 
 
 def get_opts_mapping_tag(parser, sub_program):
@@ -22,7 +24,7 @@ def get_opts_mapping_tag(parser, sub_program):
     )
     parser.add_argument(
         "--barcode_fasta",
-        help="""Required. Tag barcode fasta file. It will check the mismatches between tag barcode 
+        help="""Tag barcode fasta file. It will check the mismatches between tag barcode 
 sequence in R2 reads with all tag barcode sequence in barcode_fasta. 
 It will assign read to the tag with mismatch < len(tag barcode) / 10 + 1. 
 If no such tag exists, the read is classified as invalid.
@@ -62,9 +64,7 @@ CGCAAGACACTCCAC
 >CLindex_TAG_16
 CTGCAACAAGGTCGC
 ```
-""",
-        required=True,
-    )
+""",)
     parser.add_argument(
         "--linker_fasta",
         help="""Optional. If provided, it will check the mismatches between linker sequence in R2 reads 
@@ -72,7 +72,7 @@ with all linker sequence in linker_fasta. If no mismatch < len(linker) / 10 + 1,
 """,
     )
     if sub_program:
-        s_common(parser)
+        analysis_wrapper.get_opts_analysis_match(parser, sub_program)
         parser.add_argument("--fq", help="R2 read fastq.", required=True)
 
 
@@ -105,24 +105,27 @@ class Mapping_tag(Step):
         self.fq_pattern = args.fq_pattern
         self.linker_fasta = args.linker_fasta
         self.barcode_fasta = args.barcode_fasta
-
-        # process
-        self.barcode_dict, self.barcode_length = utils.read_fasta(self.barcode_fasta, equal=True)
-        if self.linker_fasta and self.linker_fasta != 'None':
-            self.linker_dict, self.linker_length = utils.read_fasta(self.linker_fasta, equal=True)
-        else:
-            self.linker_dict, self.linker_length = {}, 0
+        #self.match_barcode, _n_match_barcode = analysis_wrapper.get_barcode_from_match_dir(args.match_dir)        
         self.pattern_dict = parse_pattern(self.fq_pattern)
-
-        # check barcode length
         barcode1 = self.pattern_dict["C"][0]
         # end - start
-        pattern_barcode_length = barcode1[1] - barcode1[0]
-        if pattern_barcode_length != self.barcode_length:
-            raise Exception(
+        self.pattern_barcode_length = barcode1[1] - barcode1[0]
+
+        # process
+        self.barcode_dict = {}
+        self.linker_dict, self.linker_length = {}, 0
+        if utils.check_arg_not_none(args, 'barcode_fasta'):
+            self.barcode_dict, fasta_barcode_length = utils.read_fasta(self.barcode_fasta, equal=True)
+            # check barcode length
+            if self.pattern_barcode_length != fasta_barcode_length:
+                raise Exception(
                 f'''barcode fasta length {self.barcode_length} 
                 != pattern barcode length {pattern_barcode_length}'''
             )
+            self.tag_barcode_length = fasta_barcode_length
+
+        if utils.check_arg_not_none(args, 'linker_fasta'):
+            self.linker_dict, self.linker_length = utils.read_fasta(self.linker_fasta, equal=True)
 
         self.res_dic = utils.genDict()
         self.res_sum_dic = utils.genDict(dim=2)
@@ -131,7 +134,6 @@ class Mapping_tag(Step):
         # out files
         self.read_count_file = f'{self.outdir}/{self.sample}_read_count.tsv'
         self.UMI_count_file = f'{self.outdir}/{self.sample}_UMI_count.tsv'
-        self.stat_file = f'{self.outdir}/stat.txt'
 
     def process_read(self):
         total_reads = 0
@@ -147,20 +149,19 @@ class Mapping_tag(Step):
                 barcode = str(attr[0])
                 umi = str(attr[1])
                 seq = record.sequence
+                seq_barcode = Barcode.get_seq_str(seq, self.pattern_dict['C'])
 
                 if self.linker_length != 0:
                     seq_linker = Barcode.get_seq_str(seq, self.pattern_dict['L'])
                     if len(seq_linker) < self.linker_length:
                         reads_unmapped_too_short += 1
                         continue
-                if self.barcode_dict:
-                    seq_barcode = Barcode.get_seq_str(seq, self.pattern_dict['C'])
-                    if self.barcode_length != len(seq_barcode):
-                        miss_length = self.barcode_length - len(seq_barcode)
-                        if miss_length > 2:
-                            reads_unmapped_too_short += 1
-                            continue
-                        seq_barcode = seq_barcode + "A" * miss_length
+                if self.pattern_barcode_length != len(seq_barcode):
+                    miss_length = self.pattern_barcode_length - len(seq_barcode)
+                    if miss_length > 2:
+                        reads_unmapped_too_short += 1
+                        continue
+                    seq_barcode = seq_barcode + "A" * miss_length
 
                 # check linker
                 if self.linker_length != 0:
@@ -177,16 +178,20 @@ class Mapping_tag(Step):
                     continue
 
                 # check barcode
-                valid_barcode = False
-                for barcode_name in self.barcode_dict:
-                    if utils.hamming_correct(self.barcode_dict[barcode_name], seq_barcode):
-                        self.res_dic[barcode][barcode_name][umi] += 1
-                        valid_barcode = True
-                        break
+                if self.barcode_dict:
+                    valid_barcode = False
+                    for barcode_name in self.barcode_dict:
+                        if utils.hamming_correct(self.barcode_dict[barcode_name], seq_barcode):
+                            self.res_dic[barcode][barcode_name][umi] += 1
+                            valid_barcode = True
+                            break
 
-                if not valid_barcode:
-                    reads_unmapped_invalid_barcode += 1
-                    continue
+                    if not valid_barcode:
+                        reads_unmapped_invalid_barcode += 1
+                        continue
+                
+                else:
+                    self.res_dic[barcode][seq_barcode][umi] += 1
 
                 # mapped
                 reads_mapped += 1
