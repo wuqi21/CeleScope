@@ -365,7 +365,7 @@ def get_barcode_from_match_dir(match_dir):
 
     match_barcode_file = match_list[0]
     get_barcode_from_match_dir.logger.info(f"Barcode file:{match_barcode_file}")
-    match_barcode, n_match_barcode = read_one_col(match_barcode_file)
+    match_barcode, n_match_barcode = utils.read_one_col(match_barcode_file)
     return match_barcode, n_match_barcode
 
 
@@ -374,7 +374,7 @@ def get_barcode_from_matrix_dir(matrix_dir):
 
     """
     match_barcode_file = f'{matrix_dir}/{BARCODE_FILE_NAME[0]}'
-    match_barcode, n_match_barcode = read_one_col(match_barcode_file)
+    match_barcode, n_match_barcode = utils.read_one_col(match_barcode_file)
     return match_barcode, n_match_barcode
 
 

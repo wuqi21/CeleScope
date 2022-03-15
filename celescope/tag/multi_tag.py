@@ -27,6 +27,7 @@ class Multi_tag(Multi):
         cmd = (
             f'{cmd_line} '
             f'--fq {fq} '
+            f'--match_dir {self.col4_dict[sample]} '
         )
         self.process_cmd(cmd, step, sample, m=5, x=1)
 

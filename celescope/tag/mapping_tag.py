@@ -105,7 +105,8 @@ class Mapping_tag(Step):
         self.fq_pattern = args.fq_pattern
         self.linker_fasta = args.linker_fasta
         self.barcode_fasta = args.barcode_fasta
-        #self.match_barcode, _n_match_barcode = analysis_wrapper.get_barcode_from_match_dir(args.match_dir)        
+        self.match_barcode, _n_match_barcode = analysis_wrapper.get_barcode_from_match_dir(args.match_dir) 
+        self.match_barcode = set(self.match_barcode)
         self.pattern_dict = parse_pattern(self.fq_pattern)
         barcode1 = self.pattern_dict["C"][0]
         # end - start
@@ -129,7 +130,6 @@ class Mapping_tag(Step):
 
         self.res_dic = utils.genDict()
         self.res_sum_dic = utils.genDict(dim=2)
-        self.match_barcode = []
 
         # out files
         self.read_count_file = f'{self.outdir}/{self.sample}_read_count.tsv'
@@ -138,7 +138,7 @@ class Mapping_tag(Step):
     def process_read(self):
         total_reads = 0
         reads_unmapped_too_short = 0
-        reads_unmapped_invalid_iinker = 0
+        reads_unmapped_invalid_linker = 0
         reads_unmapped_invalid_barcode = 0
         reads_mapped = 0
 
@@ -174,24 +174,25 @@ class Mapping_tag(Step):
                     valid_linker = True
 
                 if not valid_linker:
-                    reads_unmapped_invalid_iinker += 1
+                    reads_unmapped_invalid_linker += 1
                     continue
-
-                # check barcode
-                if self.barcode_dict:
-                    valid_barcode = False
-                    for barcode_name in self.barcode_dict:
-                        if utils.hamming_correct(self.barcode_dict[barcode_name], seq_barcode):
-                            self.res_dic[barcode][barcode_name][umi] += 1
-                            valid_barcode = True
-                            break
-
-                    if not valid_barcode:
-                        reads_unmapped_invalid_barcode += 1
-                        continue
                 
-                else:
-                    self.res_dic[barcode][seq_barcode][umi] += 1
+                # check barcode
+                if barcode in self.match_barcode:
+                    if self.barcode_dict:
+                        valid_barcode = False
+                        for barcode_name in self.barcode_dict:
+                            if utils.hamming_correct(self.barcode_dict[barcode_name], seq_barcode):
+                                self.res_dic[barcode][barcode_name][umi] += 1
+                                valid_barcode = True
+                                break
+
+                        if not valid_barcode:
+                            reads_unmapped_invalid_barcode += 1
+                            continue
+                    
+                    else:
+                        self.res_dic[barcode][seq_barcode][umi] += 1
 
                 # mapped
                 reads_mapped += 1
@@ -229,7 +230,7 @@ class Mapping_tag(Step):
         )
         self.add_metric(
             name='Reads Unmapped Invalid Linker',
-            value=reads_unmapped_invalid_iinker,
+            value=reads_unmapped_invalid_linker,
             total=total_reads,
             help_info="Unmapped R2 reads because of too many mismatches in linker sequence"
         )
