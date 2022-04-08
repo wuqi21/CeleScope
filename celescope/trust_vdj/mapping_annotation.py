@@ -70,7 +70,7 @@ class Mapping_annotation(Step):
 
         filterbc_rep = pd.read_csv(f'{self.outdir}/../03.assemble/assemble/barcoderepfl.tsv',sep='\t')
         filtered_report_out = pd.read_csv(f'{self.outdir}/../03.assemble/assemble/trust_filter_report.out',sep='\t')
-        df_for_clono = Summarize.filter_cell(df, self.seqtype, filterbc_rep, filtered_report_out, self.min_read_count)
+        df_for_clono = Summarize.filter_cell(df, self.seqtype, filterbc_rep, filtered_report_out)
         return df_for_clono
 
     @utils.add_log
@@ -129,8 +129,8 @@ class Mapping_annotation(Step):
             'total_count': TB_cell_number
         })
 
-        stat_file = self.outdir + '/Mapping.txt'
-        sum_df = pd.DataFrame(self.summary, columns=['item', 'count', 'total_count'])
+        stat_file = self.outdir + '/mapping.txt'
+        sum_df = pd.DataFrame(mapping_summary, columns=['item', 'count', 'total_count'])
         utils.gen_stat(sum_df, stat_file) 
     
     def run(self):
