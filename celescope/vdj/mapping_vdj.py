@@ -10,6 +10,11 @@ from celescope.tools.step import Step, s_common
 from celescope.vdj.__init__ import CHAINS
 
 
+FIELDS_COLNAME_DICT = {
+    'vAlignments': 'allVAlignments',
+    'jAlignments': 'allJAlignments',
+}
+
 class Mapping_vdj(Step):
     """
     ## Features
@@ -35,6 +40,11 @@ class Mapping_vdj(Step):
         self.read_type = "UMIs"
         if args.not_consensus:
             self.read_type = 'Reads'
+        self.export_fields = args.export_fields.split(',')
+
+        self.export_colnames = [FIELDS_COLNAME_DICT[field] for field in self.export_fields if field in FIELDS_COLNAME_DICT]              
+        print(self.export_colnames)
+
         self.chains = CHAINS[args.type]
 
         # out files
@@ -63,6 +73,9 @@ class Mapping_vdj(Step):
             '-readIds --force-overwrite -vGene -dGene -jGene -cGene '
             '-nFeature CDR3 -aaFeature CDR3 '
         )
+        if self.export_fields:
+            for export_field in self.export_fields:
+                cmd += f'-{export_field} '
 
         self.debug_subprocess_call(cmd)
 
@@ -141,6 +154,7 @@ class Mapping_vdj(Step):
             'aaSeqCDR3',
             'nSeqCDR3',
         ]
+        groupby_elements += self.export_colnames
         df_UMI_count = df_UMI.groupby(
             groupby_elements, as_index=False).agg({"UMI": "count"})
         df_UMI_count = df_UMI_count.sort_values("UMI", ascending=False)
@@ -213,6 +227,9 @@ def mapping_vdj(args):
 
 def get_opts_mapping_vdj(parser, sub_program):
     parser.add_argument("--type", help='TCR or BCR', required=True)
+    parser.add_argument("--export_fields", 
+        help='Additional MIXCR export fields. Multiple fields are separated by comma. The default export fields are [vGene dGene jGene cGene nFeature CDR3 aaFeature CDR3]',
+        required=True)
     parser.add_argument(
         '--species',
         choices=['hs', 'mmu'],
