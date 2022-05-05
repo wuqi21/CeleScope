@@ -1,0 +1,24 @@
+
+{% include "html/utils/start.html"%}
+
+    {% if starsolo_summary is defined %}
+    {% set step_summary = starsolo_summary %}
+    {% include "html/utils/step.html"%}
+    {% endif %}
+
+    {% if mapping_summary is defined %}
+    {% set step_summary = mapping_summary %}
+    {% include "html/smartseq/mapping.html"%}
+    {% endif %}
+
+    {% if count_summary is defined %}
+    {% set step_summary = count_summary %}
+    {% include "html/utils/step.html"%}
+    {% endif %}
+
+    <!-- {% if analysis_summary is defined %}
+    {% set step_summary = analysis_summary %}
+    {% include "html/smartseq/analysis.html"%}
+    {% endif %} -->
+    
+{% include "html/utils/end.html"%}

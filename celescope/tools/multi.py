@@ -171,8 +171,8 @@ use `--steps_run barcode,cutadapt`
         """
         self.args = self.parser.parse_args()
 
-        if self.args.gzip:
-            self.fq_suffix = ".gz"
+        # if self.args.gzip:
+        #     self.fq_suffix = ".gz"
         if self.args.steps_run != 'all':
             self.steps_run = self.args.steps_run.strip().split(',')
         

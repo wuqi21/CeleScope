@@ -20,6 +20,7 @@ ASSAY_LIST = [
     'convert10X',
     'fl_vdj_TRUST4',
     'fl_vdj_TRUST4_split',
+    'smartseq',
 ]
 
 ROOT_PATH = os.path.dirname(__file__)

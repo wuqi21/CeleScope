@@ -1,5 +1,5 @@
 conda-forge::python=3.9
-bioconda::star=2.6.1b
+bioconda::star=2.7.10a
 bioconda::picard=2.18.17
 bioconda::ucsc-gtftogenepred=377
 bioconda::subread=2.0.1
