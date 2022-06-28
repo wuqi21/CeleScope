@@ -6,7 +6,29 @@ import pandas as pd
 from celescope.tools.__init__ import (BARCODE_FILE_NAME, FEATURE_FILE_NAME, MATRIX_FILE_NAME)
 from celescope.tools import utils
 
+
+def get_matrix_file_path(matrix_dir, file_name):
+    """
+    compatible with gzip file
+    """
+    file_path_list = [f'{matrix_dir}/{file_name}', f'{matrix_dir}/{file_name}.gz']
+    for file_path in file_path_list:
+        if os.path.exists(file_path):
+            return file_path
+
+
+def get_barcodes_from_matrix_dir(matrix_dir):
+    """
+    Args:
+        matrix_dir: str
+    Returns:
+        barcodes: list
+    """
+    barcode_file_path = get_matrix_file_path(matrix_dir, BARCODE_FILE_NAME)
+    barcodes, _ = utils.read_one_col(barcode_file_path)
+    return barcodes
   
+
 class Features:
     def __init__(self, gene_id: list, gene_name=None, gene_type=None):
         """
@@ -57,11 +79,11 @@ class CountMatrix:
     @classmethod
     @utils.add_log
     def from_matrix_dir(cls, matrix_dir):
-        features_tsv = utils.get_matrix_file_path(matrix_dir, FEATURE_FILE_NAME)
+        features_tsv = get_matrix_file_path(matrix_dir, FEATURE_FILE_NAME)
         features = Features.from_tsv(tsv_file=features_tsv)
-        barcode_file = utils.get_matrix_file_path(matrix_dir, BARCODE_FILE_NAME)
+        barcode_file = get_matrix_file_path(matrix_dir, BARCODE_FILE_NAME)
         barcodes, _ = utils.read_one_col(barcode_file)
-        matrix_path = utils.get_matrix_file_path(matrix_dir, MATRIX_FILE_NAME)
+        matrix_path = get_matrix_file_path(matrix_dir, MATRIX_FILE_NAME)
         matrix= scipy.io.mmread(matrix_path)
 
         return cls(features, barcodes, matrix)

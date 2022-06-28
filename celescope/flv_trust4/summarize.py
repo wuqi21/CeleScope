@@ -9,6 +9,7 @@ from celescope.tools.capture.threshold import Auto
 from celescope.tools.step import Step, s_common
 from celescope.flv_trust4.__init__ import CHAIN, PAIRED_CHAIN, TOOLS_DIR
 from celescope.tools.emptydrop_cr import get_plot_elements
+from celescope.tools.parse_match_dir import MatchDirParser
 
 
 ASSEMBLE_SUFFIX = 'assembled_reads.fa'
@@ -92,7 +93,7 @@ class Summarize(Step):
             self.target_barcodes = None
             self.expected_target_cell_num = args.expected_target_cell_num
 
-        self.matrix_file = utils.get_matrix_dir_from_match_dir(args.match_dir)
+        self.matrix_dir = MatchDirParser(args.match_dir).matrix_dir
         self.chains, self.paired_groups = self._parse_seqtype(self.seqtype)
     
     @staticmethod

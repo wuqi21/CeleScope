@@ -5,6 +5,9 @@ assign cell identity based on SNR and UMI_min
 from celescope.__init__ import ROOT_PATH, HELP_DICT
 from celescope.tools.step import Step, s_common
 from celescope.tools import utils
+from celescope.tools.matrix import get_barcodes_from_matrix_dir
+from celescope.tools.parse_match_dir import MatchDirParser
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -87,13 +90,14 @@ class Count_tag(Step):
         self.df_read_count = pd.read_csv(self.read_count_file, sep="\t", index_col=0)
 
         if utils.check_arg_not_none(args, 'match_dir'):
-            match_dict = utils.parse_match_dir(args.match_dir)
-            self.match_barcode = match_dict['match_barcode']
-            self.n_match_barcode = match_dict['n_match_barcode']
-            self.tsne_file = match_dict['tsne_coord']
-            self.matrix_dir = match_dict['matrix_dir']
+            match_dir_parser = MatchDirParser(args.match_dir)
+            self.match_barcode = match_dir_parser.barcodes
+            self.n_match_barcode = len(self.match_barcode)
+            self.tsne_file = match_dir_parser.tsne_file
+            self.matrix_dir = match_dir_parser.matrix_dir
         elif utils.check_arg_not_none(args, 'matrix_dir'):
-            self.match_barcode, self.n_match_barcode = utils.get_barcode_from_matrix_dir(args.matrix_dir)
+            self.match_barcode = get_barcodes_from_matrix_dir(args.matrix_dir)
+            self.n_match_barcode = len(self.match_barcode)
             self.tsne_file = args.tsne_file
             self.matrix_dir = args.matrix_dir
         else:

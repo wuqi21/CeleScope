@@ -13,6 +13,7 @@ from celescope.tools.step import Step, s_common
 from celescope.tools.__init__ import FILTERED_MATRIX_DIR_SUFFIX
 from celescope.__init__ import HELP_DICT
 from celescope.tools.emptydrop_cr.wrapper import Cell_calling, read_raw_matrix
+from celescope.tools.parse_match_dir import get_matrix_dir_from_args
 
 
 def get_clonotypes_table(df):
@@ -61,12 +62,7 @@ class Split_tag(Step):
 
         if args.split_matrix:
             self.matrix_outdir = f'{args.outdir}/matrix/'
-            if utils.check_arg_not_none(args, 'match_dir'):
-                matrix_dir = utils.get_matrix_dir_from_match_dir(args.match_dir)
-            elif utils.check_arg_not_none(args, 'matrix_dir'):
-                matrix_dir = args.matrix_dir
-            else:
-                raise ValueError("--match_dir or --matrix_dir is required.")
+            matrix_dir = get_matrix_dir_from_args(args)
             self.raw_mat, self.raw_features_path, self.raw_barcodes = read_raw_matrix(matrix_dir)
 
         if args.split_fastq:

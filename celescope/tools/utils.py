@@ -296,7 +296,7 @@ def glob_file(pattern_list: list):
     """
     glob file among pattern list
     Returns:
-        PosixPath object
+        A string containing a path specification
     Raises:
         FileNotFoundError: if no file found
         MultipleFileFound: if more than one file is found
@@ -322,29 +322,6 @@ def glob_file(pattern_list: list):
     
     return match_list[0]
 
-
-def get_matrix_file_path(matrix_dir, file_name):
-    """
-    compatible with gzip file
-    """
-    file_path_list = [f'{matrix_dir}/{file_name}', f'{matrix_dir}/{file_name}.gz']
-    for file_path in file_path_list:
-        if os.path.exists(file_path):
-            return file_path
-
-
-@add_log
-def get_barcode_from_matrix_dir(matrix_dir):
-    """
-    Returns:
-        match_barcode: list
-        no_match_barcode: int
-    """
-  
-    match_barcode_file = get_matrix_file_path(matrix_dir, BARCODE_FILE_NAME)
-    match_barcode, n_match_barcode = read_one_col(match_barcode_file)
-
-    return match_barcode, n_match_barcode
 
 
 @add_log
